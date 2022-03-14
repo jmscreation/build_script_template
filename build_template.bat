@@ -61,23 +61,6 @@ pushd "%~dp0"
 
 setlocal enabledelayedexpansion
 
-:: Find The Single File To Remove When Targeting A Build File
-if not [%SINGLE_FILE%] == [] (
-
-	set REBUILD_SOURCE_DIRECTORIES=0
-	set REBUILD_SOURCE_LIBRARIES=0
-	set _DELETE=*%SINGLE_FILE%.o
-	
-	echo Cleanup %SINGLE_FILE%...
-
-	(for %%D in (%SOURCE_DIRECTORIES%) do (
-		del /S /Q "%%D\%OBJECT_DIRECTORY%\!_DELETE!" 2>nul
-	))
-
-	(for %%D in (%LIBRARY_SOURCE_DIRECTORIES%) do (
-		del /S /Q "%%D\%OBJECT_DIRECTORY%\!_DELETE!" 2>nul
-	))
-)
 
 :: Configure Raw MinGW Command Line From Custom Settings
 (for %%D in (%INCLUDE_DIRECTORIES%) do (
@@ -104,6 +87,23 @@ set LIBRARY_SOURCE_DIRECTORIES=
 :: echo %SOURCE_DIRECTORIES%
 ::----------------------
 
+:: Find The Single File To Remove When Targeting A Build File
+if not [%SINGLE_FILE%] == [] (
+
+	set REBUILD_SOURCE_DIRECTORIES=0
+	set REBUILD_SOURCE_LIBRARIES=0
+	set _DELETE=*%SINGLE_FILE%.o
+	
+	echo Cleanup %SINGLE_FILE%...
+
+	(for %%D in (%SOURCE_DIRECTORIES%) do (
+		del /S /Q "%%D\%OBJECT_DIRECTORY%\!_DELETE!" 2>nul
+	))
+
+	(for %%D in (%LIBRARY_SOURCE_DIRECTORIES%) do (
+		del /S /Q "%%D\%OBJECT_DIRECTORY%\!_DELETE!" 2>nul
+	))
+)
 
 echo Cleaning Up Old Application...
 taskkill /F /IM %OUTPUT%
