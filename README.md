@@ -118,9 +118,22 @@ LIBRARY_DIRECTORIES=libraries/libz-main
 LIBRARY_NAMES=zlib64
 ```
 
+## Extra Options
+
+Currently there aren't many extra features at the moment.
+
+You can pass a single parameter into the build script which will be used to build a single file instead of rebuilding the project.
+If you wish to re-build only a specific file, pass the filename without the file extension to the build script argument 1.
+
+Example:
+Working on `main.cpp`, and need to rebuild.
+
+`build.bat main` will find any `main.o` file and delete it, thereafter running the build process. The build process will build any missing object files and will compile `main.cpp`
+
 ### ----------------------------------------------------
 
 This project is free to use forever.
+
 This build script is still a work in progress, and more features will eventually be added.
 
 ### Links:
