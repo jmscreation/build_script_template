@@ -90,6 +90,7 @@ if not [%SINGLE_FILE%] == [] (
 
 	set REBUILD_SOURCE_DIRECTORIES=0
 	set REBUILD_SOURCE_LIBRARIES=0
+	set LINK_ONLY=0
 	set _DELETE=*%SINGLE_FILE%.o
 	
 	echo Cleanup %SINGLE_FILE%...
