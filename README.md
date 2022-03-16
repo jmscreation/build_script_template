@@ -26,11 +26,14 @@ Here you can enable verbosity to see exactly what the build toolchain is executi
 You can toggle the rebuilding of your source directories or your library directories.
 
 Async build will compile everything at the same time. Disable this if you are getting compiler errors, as the standard output will overlap with all the compilation units.
+
+If the Link only variable is enabled, the toolchain will skip all compiling and go straight to linking.
 ```
 VERBOSE=0
 REBUILD_SOURCE_DIRECTORIES=1
 REBUILD_SOURCE_LIBRARIES=0
 ASYNC_BUILD=1
+LINK_ONLY=0
 ```
 
 ### Project Directories
