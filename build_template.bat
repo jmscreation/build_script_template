@@ -20,6 +20,8 @@ set REBUILD_SOURCE_DIRECTORIES=1
 set REBUILD_SOURCE_LIBRARIES=0
 set ASYNC_BUILD=1
 
+set LINK_ONLY=0
+
 :: Configure Source For Compiling And Additional Custom Library Directories / Names
 set SOURCE_DIRECTORIES=src
 set INCLUDE_DIRECTORIES=include
@@ -37,10 +39,6 @@ set ADDITIONAL_INCLUDEDIRS=
 set ADDITIONAL_LIBRARIES=-static-libstdc++ -static-libgcc
 set ADDITIONAL_LIBDIRS=
 
-
-::------Not working------
-set LINK_ONLY=0
-::------------
 
 :: Custom Library Support Directory Names
 set LIBRARY_DIRECTORY_NAME=lib\windows
@@ -110,10 +108,6 @@ taskkill /F /IM %OUTPUT%
 del %OUTPUT% 2>nul
 taskkill /F /IM "ld.exe" 2>nul
 
-if %LINK_ONLY% GTR 0 (
-	goto linker
-)
-
 if %DEBUGMODE% GTR 0 (
 	set DEBUG_INFO=-ggdb -g
 ) else (
@@ -130,18 +124,22 @@ set OBJECT_DIRS=
 
 :: Delete objects from object directories / populate object directories array
 (for %%D in (%SOURCE_DIRECTORIES%) do (
-	if %REBUILD_SOURCE_DIRECTORIES% GTR 0 (
+	if %REBUILD_SOURCE_DIRECTORIES% GTR 0 if %LINK_ONLY% EQU 0 (
 		del /S /Q "%%D\%OBJECT_DIRECTORY%\*.o" 2>nul
 	)
 	set OBJECT_DIRS=!OBJECT_DIRS! %%D\!OBJECT_DIRECTORY!
 ))
 
 (for %%D in (%LIBRARY_SOURCE_DIRECTORIES%) do (
-	if %REBUILD_SOURCE_LIBRARIES% GTR 0 (
+	if %REBUILD_SOURCE_LIBRARIES% GTR 0 if %LINK_ONLY% EQU 0 (
 		del /S /Q "%%D\%OBJECT_DIRECTORY%\*.o" 2>nul
 	)
 	set OBJECT_DIRS=!OBJECT_DIRS! %%D\!OBJECT_DIRECTORY!
 ))
+
+if %LINK_ONLY% GTR 0 (
+	goto linker
+)
 
 :: Create Object Directory Structure
 (for %%D in (%SOURCE_DIRECTORIES%) do (
