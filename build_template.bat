@@ -109,6 +109,7 @@ if not [%SINGLE_FILE%] == [] (
 
 
 if %AUTO_REBUILD% GTR 0 (
+	echo Searching for changes...
 
 	set MODLIST=
 	(for %%D in (%SOURCE_DIRECTORIES% %LIBRARY_SOURCE_DIRECTORIES%) do (
@@ -231,7 +232,7 @@ goto close
 			start /B %WAIT% "%%~nF.res" %3 %%F -O coff -o !OBJ_DIR!\%~n3_%%~nF.res
 
 			if %VERBOSE% GTR 0 (
-				echo %3 -c %%F -O coff -o !OBJ_DIR!\%~n3_%%~nF.o
+				echo %3 %%F -O coff -o !OBJ_DIR!\%~n3_%%~nF.res
 			)
 		)
 	)
