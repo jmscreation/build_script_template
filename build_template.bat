@@ -129,7 +129,7 @@ if %AUTO_REBUILD% GTR 0 (
 )
 
 echo Cleaning Up Old Application...
-taskkill /F /IM %OUTPUT%
+taskkill /F /IM %OUTPUT% 2>nul
 del %OUTPUT% 2>nul
 taskkill /F /IM "ld.exe" 2>nul
 
@@ -151,6 +151,7 @@ set OBJECT_DIRS=
 (for %%D in (%SOURCE_DIRECTORIES%) do (
 	if %REBUILD_SOURCE_DIRECTORIES% GTR 0 if %LINK_ONLY% EQU 0 (
 		del /S /Q "%%D\%OBJECT_DIRECTORY%\*.o" 2>nul
+		del /S /Q "%%D\%OBJECT_DIRECTORY%\*.res" 2>nul
 	)
 	set OBJECT_DIRS=!OBJECT_DIRS! %%D\!OBJECT_DIRECTORY!
 ))
