@@ -23,6 +23,8 @@ COMMANDLINE=1
 ### Building Settings / Debugging
 Here you can enable verbosity to see exactly what the build toolchain is executing to debug your build-chain.
 
+The latest feature added: `AUTO_REBUILD`; With this enabled, the script will autmatically find your C/CPP files that have been modified since the last compile timestamp.
+
 You can toggle the rebuilding of your source directories or your library directories.
 
 Async build will compile everything at the same time. Disable this if you are getting compiler errors, as the standard output will overlap with all the compilation units.
@@ -30,6 +32,7 @@ Async build will compile everything at the same time. Disable this if you are ge
 If the Link only variable is enabled, the toolchain will skip all compiling and go straight to linking.
 ```
 VERBOSE=0
+AUTO_REBUILD=1
 REBUILD_SOURCE_DIRECTORIES=1
 REBUILD_SOURCE_LIBRARIES=0
 ASYNC_BUILD=1
