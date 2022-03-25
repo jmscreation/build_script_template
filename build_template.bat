@@ -10,6 +10,7 @@
 set CPP=c++
 set GPP=g++
 set GCC=gcc
+set WINDRES=windres
 set OUTPUT=program.exe
 set DEBUGMODE=0
 set COMMANDLINE=1
@@ -199,6 +200,7 @@ echo Begin Building...
 	if exist %%D\ (
 		call :compile_function %%D cpp %CPP% "%CPP_COMPILER_FLAGS%"
 		call :compile_function %%D c %GCC% "%C_COMPILER_FLAGS%"
+		call :resource_function %%D rc %WINDRES%
 	) else (
 		echo Skipping non-existent directory...
 	)
@@ -217,6 +219,19 @@ goto loop
 
 			if %VERBOSE% GTR 0 (
 				echo %3 %ADDITIONAL_INCLUDEDIRS% %~4 %DEBUG_INFO% -c %%F -o !OBJ_DIR!\%~n3_%%~nF.o
+			)
+		)
+	)
+goto close
+:resource_function
+	set OBJ_DIR=%1\%OBJECT_DIRECTORY%
+	for /R %1 %%F in (*.%2) do (
+		if not exist !OBJ_DIR!\%~n3_%%~nF.res (
+			echo Building %~n3_%%~nF.res
+			start /B %WAIT% "%%~nF.res" %3 %%F -O coff -o !OBJ_DIR!\%~n3_%%~nF.res
+
+			if %VERBOSE% GTR 0 (
+				echo %3 -c %%F -O coff -o !OBJ_DIR!\%~n3_%%~nF.o
 			)
 		)
 	)
@@ -415,6 +430,7 @@ set "files="
 (for %%D in (%OBJECT_DIRS%) do (
 	if exist %%D\ (
 		for /f "delims=" %%A in ('dir /b /a-d "%%D\*.o" ') do set "files=!files! %%D\%%A"
+		for /f "delims=" %%A in ('dir /b /a-d "%%D\*.res" ') do set "files=!files! %%D\%%A"
 	)
 ))
 
