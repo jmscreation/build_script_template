@@ -1,5 +1,5 @@
 @echo off
-::		Custom Build Script 2.1
+::		Custom Build Script 2.2
 ::
 ::       Custom library support
 ::
@@ -16,7 +16,8 @@ set COMMANDLINE=1
 
 set VERBOSE=0
 
-set REBUILD_SOURCE_DIRECTORIES=1
+set AUTO_REBUILD=1
+set REBUILD_SOURCE_DIRECTORIES=0
 set REBUILD_SOURCE_LIBRARIES=0
 set ASYNC_BUILD=1
 
@@ -90,8 +91,9 @@ if not [%SINGLE_FILE%] == [] (
 
 	set REBUILD_SOURCE_DIRECTORIES=0
 	set REBUILD_SOURCE_LIBRARIES=0
+	set AUTO_REBUILD=0
 	set LINK_ONLY=0
-	set _DELETE=*%SINGLE_FILE%.o
+	set _DELETE=*_%SINGLE_FILE%.o
 	
 	echo Cleanup %SINGLE_FILE%...
 
@@ -101,6 +103,26 @@ if not [%SINGLE_FILE%] == [] (
 
 	(for %%D in (%LIBRARY_SOURCE_DIRECTORIES%) do (
 		del /S /Q "%%D\%OBJECT_DIRECTORY%\!_DELETE!" 2>nul
+	))
+)
+
+
+if %AUTO_REBUILD% GTR 0 (
+
+	set MODLIST=
+	(for %%D in (%SOURCE_DIRECTORIES% %LIBRARY_SOURCE_DIRECTORIES%) do (
+		call :recursive_search %%D cpp %CPP%
+		set MODLIST=!MODLIST! !MODIFIED_FILES!
+
+		call :recursive_search %%D c %GCC%
+		set MODLIST=!MODLIST! !MODIFIED_FILES!
+	))
+
+	(for %%F in (!MODLIST!) do (
+		del /S /Q "%%~dpF\%OBJECT_DIRECTORY%\%%~nF.o" 2>nul
+		if %VERBOSE% GTR 0 (
+			echo del /S /Q "%%~dpF\%OBJECT_DIRECTORY%\%%~nF.o"
+		)
 	))
 )
 
@@ -199,6 +221,176 @@ goto loop
 		)
 	)
 goto close
+::--------------------------------------
+
+::	Modified File Searcher
+
+:recursive_search
+
+set MODIFIED_FILES=
+
+set _list=
+for /R %1 %%F in (*.%2) do (
+	if %VERBOSE% GTR 0 (
+		echo Check %%~nF.%2
+	)
+	set _list=!_list! %%F
+)
+
+call :find_modified_files _list %3
+
+goto close
+
+:find_modified_files
+
+for %%F in (!%1!) do (
+	set moddate=%%~tF
+
+	pushd %%~dpF
+	set f="%%~nF%%~xF"
+	for /f "useback tokens=*" %%b in (`forfiles /M !f! /C "cmd /c echo @ftime"`) do (
+		for /f "tokens=1,2,3 delims=: " %%x in ("%%b") do set hr=%%x&set min=%%y&set SECONDS=%%z
+	)
+	popd
+
+	set moddate=!moddate:~0,-3!:!SECONDS!
+
+	call :setdate "!moddate!" CURRENT
+
+	call :loaddata %%F
+
+	call :setdate "!datecode!" LASTCOMPILED
+
+	call :check_dates %%F %2
+)
+goto close
+
+:check_dates
+	set /A LASTCOMPILED_SEC=!LASTCOMPILED_SEC!+5
+
+	if !CURRENT_YEAR! GTR !LASTCOMPILED_YEAR! goto changed
+	if !CURRENT_YEAR! EQU !LASTCOMPILED_YEAR! goto check_month
+	goto skip
+
+	:check_month
+	if !CURRENT_MONTH! GTR !LASTCOMPILED_MONTH! goto changed
+	if !CURRENT_MONTH! EQU !LASTCOMPILED_MONTH! goto check_day
+	goto skip
+
+	:check_day
+	if !CURRENT_DAY! GTR !LASTCOMPILED_DAY! goto changed
+	if !CURRENT_DAY! EQU !LASTCOMPILED_DAY! goto check_hour
+	
+	goto skip
+	:check_hour
+	if !CURRENT_HOUR! GTR !LASTCOMPILED_HOUR! goto changed
+	if !CURRENT_HOUR! EQU !LASTCOMPILED_HOUR! goto check_min
+	
+	goto skip
+	:check_min
+	if !CURRENT_MIN! GTR !LASTCOMPILED_MIN! goto changed
+	if !CURRENT_MIN! EQU !LASTCOMPILED_MIN! goto check_sec
+
+	goto skip
+	:check_sec
+	if !CURRENT_SEC! GTR !LASTCOMPILED_SEC! goto changed
+	goto skip
+:changed
+	for /f "tokens=2,3,4 delims=/ " %%x in ("%DATE%") do set _timestamp=%%x/%%y/%%z
+	for /f "useback tokens=*" %%b in (`time /T`) do set _HR=%%b & set _timestamp=!_timestamp! !_HR:~0,2!
+	for /f "tokens=2,3 delims=:. " %%x in ("%TIME%") do set _timestamp=!_timestamp!:%%x:%%y
+	
+	if %VERBOSE% GTR 0 (
+		echo File Changed: %~n1%~x1
+		echo !moddate! is newer than !datecode!
+		echo Record - !_timestamp!
+	)
+
+	set MODIFIED_FILES=!MODIFIED_FILES! "%~dp1%~n2_%~n1%~x1"
+	echo !_timestamp!>%1:datecode
+
+:skip
+goto close
+
+:setdate
+	set _date=%1
+	for /f "useback tokens=*" %%a in ('%_date%') do set _date=%%~a
+
+	set /A "%2_YEAR=0"
+	set /A "%2_MONTH=0"
+	set /A "%2_DAY=0"
+	set /A "%2_HOUR=0"
+	set /A "%2_MIN=0"
+	set /A "%2_SEC=0"
+
+	for /f "tokens=* delims=0" %%a in ("!_date:~6,4!") do (
+		set _tn=
+		set /a _tn=%%a 2>nul
+		if {!_tn!}=={%%a} (
+			if not {%%a}=={} ( set /A "%2_YEAR=!_tn!" )
+		)
+	)
+	for /f "tokens=* delims=0" %%a in ("!_date:~0,2!") do (
+		set _tn=
+		set /a _tn=%%a 2>nul
+		if {!_tn!}=={%%a} (
+			if not {%%a}=={} ( set /A "%2_MONTH=!_tn!" )
+		)
+	)
+	for /f "tokens=* delims=0" %%a in ("!_date:~3,2!") do (
+		set _tn=
+		set /a _tn=%%a 2>nul
+		if {!_tn!}=={%%a} (
+			if not {%%a}=={} ( set /A "%2_DAY=!_tn!" )
+		)
+	)
+	for /f "tokens=* delims=0" %%a in ("!_date:~11,2!") do (
+		set _tn=
+		set /a _tn=%%a 2>nul
+		if {!_tn!}=={%%a} (
+			if not {%%a}=={} ( set /A "%2_HOUR=!_tn!" )
+		)
+	)
+	for /f "tokens=* delims=0" %%a in ("!_date:~14,2!") do (
+		set _tn=
+		set /a _tn=%%a 2>nul
+		if {!_tn!}=={%%a} (
+			if not {%%a}=={} ( set /A "%2_MIN=!_tn!" )
+		)
+	)
+	for /f "tokens=* delims=0" %%a in ("!_date:~17,2!") do (
+		set _tn=
+		set /a _tn=%%a 2>nul
+	
+		if {!_tn!}=={%%a} (
+			if not {%%a}=={} ( set /A "%2_SEC=!_tn!" )
+		)
+	)
+
+goto close
+
+:loaddata
+	for /f "useback tokens=*" %%a in ('%1') do set _path="%%~a:datecode"
+
+	set datecode=00/00/0000 00:00:00
+	for /f "useback delims=" %%A in (`"more<!_path!"`) do (
+		set datecode=%%A
+	)
+
+	if "!datecode!" == "00/00/0000 00:00:00" (
+		echo !datecode!>!_path!
+	)
+
+goto close
+
+
+
+
+
+
+
+
+
 ::--------------------------------------
 
 :: Wait for building process to finish
