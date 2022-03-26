@@ -36,6 +36,7 @@ set CPP_COMPILER_FLAGS=-std=c++20
 set C_COMPILER_FLAGS=
 set OBJECT_DIRECTORY=.objs
 
+
 :: Advanced / Extra Command Line Settings For Building / Linking
 set ADDITIONAL_INCLUDEDIRS=
 set ADDITIONAL_LIBRARIES=-static-libstdc++ -static-libgcc
@@ -50,6 +51,13 @@ set SOURCE_DIRECTORY_NAME=src
 :: Single File Compilation
 set SINGLE_FILE=%1
 
+:: Add Optimization To Release and a define for debug mode
+if %DEBUGMODE% EQU 0 (
+	set CPP_COMPILER_FLAGS=%CPP_COMPILER_FLAGS% -O3 -Os
+) else (
+	set CPP_COMPILER_FLAGS=%CPP_COMPILER_FLAGS% -DDEBUGMODE
+)
+
 :: ---------- Build Script Start -----------
 
 cls
@@ -61,6 +69,11 @@ pushd "%~dp0"
 
 setlocal enabledelayedexpansion
 
+:: Calculate a timestamp
+for /f "tokens=2,3,4 delims=/ " %%x in ("%DATE%") do set _timestamp=%%x/%%y/%%z
+for /f "useback tokens=*" %%b in (`time /T`) do set _HR=%%b & set _timestamp=!_timestamp! !_HR:~0,2!& set _PM=!_HR:~6,2!
+for /f "tokens=2,3 delims=:. " %%x in ("%TIME%") do set _timestamp=!_timestamp!:%%x:%%y
+set _timestamp=!_timestamp! !_PM!
 
 :: Configure Raw MinGW Command Line From Custom Settings
 (for %%D in (%INCLUDE_DIRECTORIES%) do (
@@ -269,8 +282,9 @@ for %%F in (!%1!) do (
 		for /f "tokens=1,2,3 delims=: " %%x in ("%%b") do set hr=%%x&set min=%%y&set SECONDS=%%z
 	)
 	popd
+	set pm=!moddate:~17,2!
+	set moddate=!moddate:~0,-3!:!SECONDS! !pm!
 
-	set moddate=!moddate:~0,-3!:!SECONDS!
 
 	call :setdate "!moddate!" CURRENT
 
@@ -313,10 +327,7 @@ goto close
 	if !CURRENT_SEC! GTR !LASTCOMPILED_SEC! goto changed
 	goto skip
 :changed
-	for /f "tokens=2,3,4 delims=/ " %%x in ("%DATE%") do set _timestamp=%%x/%%y/%%z
-	for /f "useback tokens=*" %%b in (`time /T`) do set _HR=%%b & set _timestamp=!_timestamp! !_HR:~0,2!
-	for /f "tokens=2,3 delims=:. " %%x in ("%TIME%") do set _timestamp=!_timestamp!:%%x:%%y
-	
+
 	if %VERBOSE% GTR 0 (
 		echo File Changed: %~n1%~x1
 		echo !moddate! is newer than !datecode!
@@ -381,6 +392,14 @@ goto close
 	
 		if {!_tn!}=={%%a} (
 			if not {%%a}=={} ( set /A "%2_SEC=!_tn!" )
+		)
+	)
+	if !%2_HOUR! LSS 12 (
+		for /f "tokens=* delims=0" %%a in ("!_date:~20,2!") do (
+			set _ts=%%a
+			if {!_ts!}=={%%a} (
+				if {!_ts!} == {PM} ( set /A "%2_HOUR=!%2_HOUR!+12" )
+			)
 		)
 	)
 
