@@ -1,5 +1,5 @@
 @echo off
-::		Custom Build Script 2.2
+::		Custom Build Script 2.3
 ::
 ::       Custom library support
 ::
@@ -221,7 +221,7 @@ echo Begin Building...
 	)
 ))
 
-goto loop
+goto linker
 
 :: ---------- Compiler Function -----------
 ::	SourceDirctory FileExtention Compiler CompilerFlags
@@ -234,6 +234,9 @@ goto loop
 
 			if %VERBOSE% GTR 0 (
 				echo %3 %ADDITIONAL_INCLUDEDIRS% %~4 %DEBUG_INFO% -c %%F -o !OBJ_DIR!\%~n3_%%~nF.o
+			)
+			if %ASYNC_BUILD% GTR 0 (
+				call :async_wait
 			)
 		)
 	)
@@ -248,7 +251,26 @@ goto close
 			if %VERBOSE% GTR 0 (
 				echo %3 %%F -O coff -o !OBJ_DIR!\%~n3_%%~nF.res
 			)
+			if %ASYNC_BUILD% GTR 0 (
+				call :async_wait
+			)
 		)
+	)
+goto close
+
+:: -------- Asnychronous Wait ---------
+:: 	Block until the hardware concurrency is matched
+:async_wait
+	set /A count=0
+	for /f %%G in ('tasklist ^| find /c "%CPP%"') do ( set /A count+=%%G )
+	for /f %%G in ('tasklist ^| find /c "%GCC%"') do ( set /A count+=%%G )
+	for /f %%G in ('tasklist ^| find /c "%GPP%"') do ( set /A count+=%%G )
+
+	if %count% LSS %NUMBER_OF_PROCESSORS% (
+		goto close
+	) else (
+		timeout /t 1 /nobreak>nul
+		goto async_wait
 	)
 goto close
 ::--------------------------------------
@@ -428,22 +450,10 @@ goto close
 
 
 ::--------------------------------------
-
-:: Wait for building process to finish
-:loop
-set /A count=0
-for /f %%G in ('tasklist ^| find /c "%CPP%"') do ( set /A count+=%%G )
-for /f %%G in ('tasklist ^| find /c "%GCC%"') do ( set /A count+=%%G )
-for /f %%G in ('tasklist ^| find /c "%GPP%"') do ( set /A count+=%%G )
-
-if %count%==0 (
-	goto linker
-) else (
-	timeout /t 2 /nobreak>nul
-	goto loop
-)
-
 :linker
+
+:: Wait for building process to finish before linking
+call :async_wait
 
 set "files="
 
