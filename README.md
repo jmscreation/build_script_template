@@ -27,7 +27,7 @@ The latest feature added: `AUTO_REBUILD`; With this enabled, the script will aut
 
 You can toggle the rebuilding of your source directories or your library directories.
 
-Async build will compile everything at the same time. Disable this if you are getting compiler errors, as the standard output will overlap with all the compilation units.
+Async build will compile everything in a parallel mode. Disable this if you are getting lots of compiler errors, as the standard output will overlap with other errors within the compilation units. When building with this feature enabled, the script will make sure not to spawn more build tasks than there are hardware threads available.
 
 If the Link only variable is enabled, the toolchain will skip all compiling and go straight to linking.
 ```
