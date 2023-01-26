@@ -273,6 +273,21 @@ goto close
 		goto async_wait
 	)
 goto close
+
+:: 	Block until there are no more build units running
+:async_wait_all
+	set /A count=0
+	for /f %%G in ('tasklist ^| find /c "%CPP%"') do ( set /A count+=%%G )
+	for /f %%G in ('tasklist ^| find /c "%GCC%"') do ( set /A count+=%%G )
+	for /f %%G in ('tasklist ^| find /c "%GPP%"') do ( set /A count+=%%G )
+
+	if %count% EQU 0 (
+		goto close
+	) else (
+		timeout /t 1 /nobreak>nul
+		goto async_wait_all
+	)
+goto close
 ::--------------------------------------
 
 ::	Modified File Searcher
@@ -452,8 +467,8 @@ goto close
 ::--------------------------------------
 :linker
 
-:: Wait for building process to finish before linking
-call :async_wait
+:: Wait for building process to finish all tasks before linking
+call :async_wait_all
 
 set "files="
 
