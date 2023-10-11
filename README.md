@@ -32,8 +32,6 @@ Async build will compile everything in a parallel mode. Disable this if you are 
 
 If the Link only variable is enabled, the toolchain will skip all compiling and go straight to linking.
 
-Recursive includes will recursively include subdirectories for each included directory.
-
 ```
 VERBOSE=0
 AUTO_REBUILD=1
@@ -41,7 +39,6 @@ REBUILD_SOURCE_DIRECTORIES=1
 REBUILD_SOURCE_LIBRARIES=0
 ASYNC_BUILD=1
 LINK_ONLY=0
-RECURSIVE_INCLUDES=0
 ```
 
 ### Project Directories
@@ -72,6 +69,12 @@ Here you can change some of the linking settings. You can add additional linker 
 ADDITIONAL_INCLUDEDIRS=
 ADDITIONAL_LIBRARIES=-static-libstdc++ -static-libgcc -static
 ADDITIONAL_LIBDIRS=
+```
+
+Here you can change recursive settings for your include and source directories. This will recursively search all sub-directories in your specified project folders.
+```
+RECURSIVE_INCLUDES=0
+RECURSIVE_SOURCE=0
 ```
 
 ### Additional Compiler Flags
