@@ -23,13 +23,17 @@ COMMANDLINE=1
 ### Building Settings / Debugging
 Here you can enable verbosity to see exactly what the build toolchain is executing to debug your build-chain.
 
-The latest feature added: `AUTO_REBUILD`; With this enabled, the script will autmatically find your C/CPP files that have been modified since the last compile timestamp.
+`AUTO_REBUILD` will autmatically find your C/CPP files that have been modified since the last compile timestamp. *There is a known bug that still needs to be resolved, which causes missing builds after 1AM.
+Note: This feature only works on NTFS file systems!
 
 You can toggle the rebuilding of your source directories or your library directories.
 
 Async build will compile everything in a parallel mode. Disable this if you are getting lots of compiler errors, as the standard output will overlap with other errors within the compilation units. When building with this feature enabled, the script will make sure not to spawn more build tasks than there are hardware threads available.
 
 If the Link only variable is enabled, the toolchain will skip all compiling and go straight to linking.
+
+Recursive includes will recursively include subdirectories for each included directory.
+
 ```
 VERBOSE=0
 AUTO_REBUILD=1
@@ -37,6 +41,7 @@ REBUILD_SOURCE_DIRECTORIES=1
 REBUILD_SOURCE_LIBRARIES=0
 ASYNC_BUILD=1
 LINK_ONLY=0
+RECURSIVE_INCLUDES=0
 ```
 
 ### Project Directories
