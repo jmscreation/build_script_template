@@ -21,6 +21,7 @@ set AUTO_REBUILD=1
 set REBUILD_SOURCE_DIRECTORIES=0
 set REBUILD_SOURCE_LIBRARIES=0
 set ASYNC_BUILD=1
+set RECURSIVE_INCLUDES=1
 
 set LINK_ONLY=0
 
@@ -74,6 +75,15 @@ for /f "tokens=2,3,4 delims=/ " %%x in ("%DATE%") do set _timestamp=%%x/%%y/%%z
 for /f "useback tokens=*" %%b in (`time /T`) do set _HR=%%b & set _timestamp=!_timestamp! !_HR:~0,2!& set _PM=!_HR:~6,2!
 for /f "tokens=2,3 delims=:. " %%x in ("%TIME%") do set _timestamp=!_timestamp!:%%x:%%y
 set _timestamp=!_timestamp! !_PM!
+
+:: Iterate Include Directories
+if %RECURSIVE_INCLUDES% GTR 0 (
+	set TEMP_DIRS=!INCLUDE_DIRECTORIES!
+	for /f "tokens=*" %%D IN ('DIR %INCLUDE_DIRECTORIES% /AD /B /S') do (
+		set TEMP_DIRS=!TEMP_DIRS! %%D
+	)
+	set INCLUDE_DIRECTORIES=!TEMP_DIRS!
+)
 
 :: Configure Raw MinGW Command Line From Custom Settings
 (for %%D in (%INCLUDE_DIRECTORIES%) do (
