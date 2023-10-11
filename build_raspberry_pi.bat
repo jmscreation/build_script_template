@@ -1,5 +1,5 @@
 @echo off
-::		Custom Build Script 2.3
+::		Custom Build Script 2.4
 ::
 ::       Custom library support for rbpi linux
 :: 	    Download GNU toolchain Here https://gnutoolchains.com/raspberry/
@@ -21,7 +21,6 @@ set AUTO_REBUILD=1
 set REBUILD_SOURCE_DIRECTORIES=0
 set REBUILD_SOURCE_LIBRARIES=0
 set ASYNC_BUILD=1
-set RECURSIVE_INCLUDES=1
 
 set LINK_ONLY=0
 
@@ -48,6 +47,10 @@ set ADDITIONAL_LIBDIRS=
 set LIBRARY_DIRECTORY_NAME=lib\rbpi
 set INCLUDE_DIRECTORY_NAME=include
 set SOURCE_DIRECTORY_NAME=src
+
+:: Recursive Directories
+set RECURSIVE_INCLUDES=0
+set RECURSIVE_SOURCE=0
 
 :: Single File Compilation
 set SINGLE_FILE=%1
@@ -83,6 +86,17 @@ if %RECURSIVE_INCLUDES% GTR 0 (
 		set TEMP_DIRS=!TEMP_DIRS! %%D
 	)
 	set INCLUDE_DIRECTORIES=!TEMP_DIRS!
+)
+
+:: Iterate Source Directories
+if %RECURSIVE_SOURCE% GTR 0 (
+	set TEMP_DIRS=!SOURCE_DIRECTORIES!
+	for /f "tokens=*" %%D IN ('DIR %SOURCE_DIRECTORIES% /AD /B /S') do (
+		if not "%%~nxD" == "%OBJECT_DIRECTORY%" (
+			set TEMP_DIRS=!TEMP_DIRS! %%D
+		)
+	)
+	set SOURCE_DIRECTORIES=!TEMP_DIRS!
 )
 
 :: Configure Raw MinGW Command Line From Custom Settings
@@ -136,6 +150,10 @@ if %AUTO_REBUILD% GTR 0 (
 
 	set MODLIST=
 	(for %%D in (%SOURCE_DIRECTORIES% %LIBRARY_SOURCE_DIRECTORIES%) do (
+		if %VERBOSE% GTR 0 (
+			echo ... in %%~nxD...
+		)
+
 		call :recursive_search %%D cpp %CPP%
 		set MODLIST=!MODLIST! !MODIFIED_FILES!
 
@@ -144,9 +162,9 @@ if %AUTO_REBUILD% GTR 0 (
 	))
 
 	(for %%F in (!MODLIST!) do (
-		del /S /Q "%%~dpF\%OBJECT_DIRECTORY%\%%~nF.o" 2>nul
+		del /S /Q "%%~dpF%OBJECT_DIRECTORY%\%%~nF.o" 2>nul
 		if %VERBOSE% GTR 0 (
-			echo del /S /Q "%%~dpF\%OBJECT_DIRECTORY%\%%~nF.o"
+			echo del /S /Q "%%~dpF%OBJECT_DIRECTORY%\%%~nF.o"
 		)
 	))
 )
@@ -173,8 +191,8 @@ set OBJECT_DIRS=
 :: Delete objects from object directories / populate object directories array
 (for %%D in (%SOURCE_DIRECTORIES%) do (
 	if %REBUILD_SOURCE_DIRECTORIES% GTR 0 if %LINK_ONLY% EQU 0 (
-		del /S /Q "%%D\%OBJECT_DIRECTORY%\*.o" 2>nul
-		del /S /Q "%%D\%OBJECT_DIRECTORY%\*.res" 2>nul
+		del /S /Q "%%~D\%OBJECT_DIRECTORY%\*.o" 2>nul
+		del /S /Q "%%~D\%OBJECT_DIRECTORY%\*.res" 2>nul   
 	)
 	set OBJECT_DIRS=!OBJECT_DIRS! %%D\!OBJECT_DIRECTORY!
 ))
@@ -236,7 +254,7 @@ goto linker
 ::	SourceDirctory FileExtention Compiler CompilerFlags
 :compile_function
 	set OBJ_DIR=%1\%OBJECT_DIRECTORY%
-	for /R %1 %%F in (*.%2) do (
+	for %%F in (%1\*.%2) do (
 		if not exist !OBJ_DIR!\%~n3_%%~nF.o (
 			echo Building %~n3_%%~nF.o
 			start /B %WAIT% "%%~nF.o" %3 %ADDITIONAL_INCLUDEDIRS% %~4 %DEBUG_INFO% -c %%F -o !OBJ_DIR!\%~n3_%%~nF.o
@@ -290,7 +308,7 @@ goto close
 set MODIFIED_FILES=
 
 set _list=
-for /R %1 %%F in (*.%2) do (
+for %%F in (%1\*.%2) do (
 	if %VERBOSE% GTR 0 (
 		echo Check %%~nF.%2
 	)
@@ -469,13 +487,11 @@ set "files="
 (for %%D in (%OBJECT_DIRS%) do (
 	if exist %%D\ (
 		for /f "delims=" %%A in ('dir /b /a-d "%%D\*.o" ') do set "files=!files! %%D\%%A"
-		for /f "delims=" %%A in ('dir /b /a-d "%%D\*.res" ') do set "files=!files! %%D\%%A"
 	)
 ))
 
 :link
 echo Linking Executable...
-
 
 if %VERBOSE% GTR 0 (
 	echo %GPP% %ADDITIONAL_LIBDIRS% -o %OUTPUT% %files% %ADDITIONAL_LIBRARIES%
